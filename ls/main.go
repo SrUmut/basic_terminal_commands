@@ -14,6 +14,18 @@ func checkError(err error) {
 	}
 }
 
+func colored(text, color string) string {
+	switch color {
+	case "red":
+		return fmt.Sprintf("\x1b[31m%v\x1b[0m", text)
+	case "cyan":
+		return fmt.Sprintf("\033[36m%v\033[0m", text)
+	default:
+		fmt.Printf("Error: No such color as %v\n", color)
+		return ""
+	}
+}
+
 func getHumanReadable(byteSize int64) string {
 	var hr string
 	byteSizeF := float32(byteSize)
@@ -65,25 +77,28 @@ func main() {
 	list, err := os.ReadDir(path)
 	checkError(err)
 	for _, entry := range list {
-		entryName := ""
-		entryPerms := ""
-		var entrySize int64 = 0
-
+		// -a
+		if !listAll && strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
 		filePath := path + "/" + entry.Name()
 		fileInfo, err := os.Stat(filePath)
 		checkError(err)
 
+		// getting entry permissions as string
+		entryPerms := ""
+		if entry.IsDir() {
+			entryPerms = "d" + fileInfo.Mode().Perm().String()[1:]
+		} else {
+			entryPerms = fileInfo.Mode().Perm().String()
+		}
+
 		// -l
 		if longFormat {
-			if entry.IsDir() {
-				entryPerms = "d" + fileInfo.Mode().Perm().String()[1:]
-			} else {
-				entryPerms = fileInfo.Mode().Perm().String()
-			}
 			fmt.Printf("%v\t", entryPerms)
 
 			// Entry Size
-			entrySize = fileInfo.Size()
+			entrySize := fileInfo.Size()
 			if humanReadable {
 				fmt.Printf("%6v\t", getHumanReadable(entrySize))
 			} else {
@@ -100,17 +115,14 @@ func main() {
 				fmt.Printf("%5v\t", modTime.Format("15:04"))
 			}
 		}
-		// -a
-		if !listAll && strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
 
 		// Setting entry name
+		entryName := ""
 		if entry.IsDir() { // directory
-			entryName = "\033[36m" + entry.Name() + "\033[0m"
+			entryName = colored(entry.Name(), "cyan")
 		} else { // file
 			if strings.Contains(entryPerms, "x") { // executable
-				entryName = "\x1b[31m" + entry.Name() + "\x1b[0m"
+				entryName = colored(entry.Name(), "red")
 			} else { // not executable
 				entryName = entry.Name()
 			}
