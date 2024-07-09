@@ -1,4 +1,6 @@
 .DS_Store
+test.go
 **/*.txt
 **/*.build
-**/ls
+ls/ls
+cat/cat

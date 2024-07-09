@@ -67,13 +67,17 @@ func main() {
 						os.Exit(1)
 					}
 				}
-			} else { // if argument is a dir path
-				_, err := os.Stat(arg)
+			} else { // if argument is a dir path check if directory exists
+				fileinfo, err := os.Stat(arg)
 				checkError(err)
+				if !fileinfo.IsDir() {
+					checkError(fmt.Errorf("given path does not belong to a directory: %v", path))
+				}
 				path = arg
 			}
 		}
 	}
+	// get the list of entries in the directory
 	list, err := os.ReadDir(path)
 	checkError(err)
 	for _, entry := range list {
